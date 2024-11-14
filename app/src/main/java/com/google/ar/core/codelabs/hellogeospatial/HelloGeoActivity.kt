@@ -115,6 +115,10 @@ class HelloGeoActivity : AppCompatActivity() {
     )
   }
 
+  fun initAnchors(){
+
+  }
+
   override fun onRequestPermissionsResult(
     requestCode: Int,
     permissions: Array<String>,

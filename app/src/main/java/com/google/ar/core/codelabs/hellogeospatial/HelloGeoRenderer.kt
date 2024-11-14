@@ -19,10 +19,12 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.opengl.Matrix
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.gms.maps.model.LatLng
 import com.google.ar.core.Anchor
+import com.google.ar.core.Earth
 import com.google.ar.core.TrackingState
 import com.google.ar.core.examples.java.common.helpers.DisplayRotationHelper
 import com.google.ar.core.examples.java.common.helpers.TrackingStateHelper
@@ -42,13 +44,14 @@ const val SHARED_PREFS = "shared_prefs"
 const val list = "shared_list"
 data class PosData(var lat:Double, var long:Double, var alt:Double)
 
-//var PosDataList = mutableListOf<PosData>()
+var AncList = mutableListOf<Anchor>()
 
 // shared preferences.
 lateinit var sharedpreferences: SharedPreferences
 
 // creating a variable for gson.
 val gson = Gson()
+var ancInited = false
 
 class HelloGeoRenderer(val activity: HelloGeoActivity) :
   SampleRender.Renderer, DefaultLifecycleObserver {
@@ -130,7 +133,21 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     virtualSceneFramebuffer.resize(width, height)
   }
   //</editor-fold>
+  fun initAnc(earth: Earth?){
+    val qx = 0f
+    val qy = 0f
+    val qz = 0f
+    val qw = 1f
+    AncList = mutableListOf<Anchor>()
 
+    for (elem in PosDataList){
+      if (earth?.trackingState == TrackingState.TRACKING) {
+        earthAnchor = earth.createAnchor(elem.lat, elem.long, elem.alt, qx, qy, qz, qw)
+      }
+      earthAnchor?.let {
+        AncList.add(it)}
+    }
+  }
   override fun onDrawFrame(render: SampleRender) {
     val session = session ?: return
 
@@ -193,6 +210,12 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
 
     // TODO: Obtain Geospatial information and display it on the map.
     val earth = session.earth
+
+    if (!ancInited){
+      initAnc(earth)
+      ancInited = true
+    }
+
     if (earth?.trackingState == TrackingState.TRACKING) {
       // TODO: the Earth object may be used here.
       val cameraGeospatialPose = earth.cameraGeospatialPose
@@ -203,17 +226,9 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
       )
     }
 
-    val qx = 0f
-    val qy = 0f
-    val qz = 0f
-    val qw = 1f
-
-    for (elem in PosDataList){
-      if (earth?.trackingState == TrackingState.TRACKING) {
-        earthAnchor = earth.createAnchor(elem.lat, elem.long, elem.alt, qx, qy, qz, qw)
-      }
-      // Draw the placed anchor, if it exists.
-      earthAnchor?.let {
+    for (elem in AncList){
+      earthAnchor = elem
+      earthAnchor?.let{
         render.renderCompassAtAnchor(it)
       }
     }
@@ -256,6 +271,11 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     earthAnchor =
       earth.createAnchor(latLng.latitude, latLng.longitude, altitude, qx, qy, qz, qw)
 
+    initAnc(earth)
+
+    earthAnchor?.let {
+      AncList.add(it)}
+
     activity.view.mapView?.earthMarker?.apply {
       position = latLng
       isVisible = true
@@ -288,4 +308,5 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
 
   private fun showError(errorMessage: String) =
     activity.view.snackbarHelper.showError(activity, errorMessage)
+
 }
