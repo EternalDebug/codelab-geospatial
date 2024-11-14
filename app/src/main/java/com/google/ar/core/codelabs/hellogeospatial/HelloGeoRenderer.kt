@@ -39,6 +39,10 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.IOException
 import java.lang.reflect.Type
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 const val SHARED_PREFS = "shared_prefs"
 const val list = "shared_list"
@@ -52,6 +56,7 @@ lateinit var sharedpreferences: SharedPreferences
 // creating a variable for gson.
 val gson = Gson()
 var ancInited = false
+var MaxDist = 1.5
 
 class HelloGeoRenderer(val activity: HelloGeoActivity) :
   SampleRender.Renderer, DefaultLifecycleObserver {
@@ -141,11 +146,14 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     AncList = mutableListOf<Anchor>()
 
     for (elem in PosDataList){
+
       if (earth?.trackingState == TrackingState.TRACKING) {
-        earthAnchor = earth.createAnchor(elem.lat, elem.long, elem.alt, qx, qy, qz, qw)
+        if (distance(LatLng(elem.lat, elem.long), earth) <= MaxDist){
+          earthAnchor = earth.createAnchor(elem.lat, elem.long, elem.alt, qx, qy, qz, qw)
+          earthAnchor?.let {
+            AncList.add(it)}
+        }
       }
-      earthAnchor?.let {
-        AncList.add(it)}
     }
   }
   override fun onDrawFrame(render: SampleRender) {
@@ -271,10 +279,12 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     earthAnchor =
       earth.createAnchor(latLng.latitude, latLng.longitude, altitude, qx, qy, qz, qw)
 
-    initAnc(earth)
+    //initAnc(earth)
 
-    earthAnchor?.let {
-      AncList.add(it)}
+    if (distance(latLng, earth) <= MaxDist){
+      earthAnchor?.let {
+        AncList.add(it)}
+    }
 
     activity.view.mapView?.earthMarker?.apply {
       position = latLng
@@ -290,6 +300,19 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
         return Pair(true, elem)
     }
     return res
+  }
+
+  fun distance(latlng: LatLng, earth: Earth): Double {
+    val lat2 = earth.cameraGeospatialPose.latitude
+    val lon2 = earth.cameraGeospatialPose.longitude
+    val R = 6371000 // радиус Земли в метрах
+    val dLat = Math.toRadians(lat2 - latlng.latitude)
+    val dLon = Math.toRadians(lon2 - latlng.longitude)
+    val a = sin(dLat / 2) * sin(dLat / 2) +
+            cos(Math.toRadians(latlng.latitude)) * cos(Math.toRadians(lat2)) *
+            sin(dLon / 2) * sin(dLon / 2)
+    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return R * c // расстояние в метрах
   }
 
   private fun SampleRender.renderCompassAtAnchor(anchor: Anchor) {
