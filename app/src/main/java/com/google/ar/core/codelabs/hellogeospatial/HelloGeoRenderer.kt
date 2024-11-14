@@ -19,6 +19,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.opengl.Matrix
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -56,7 +57,7 @@ lateinit var sharedpreferences: SharedPreferences
 // creating a variable for gson.
 val gson = Gson()
 var ancInited = false
-var MaxDist = 1.5
+var MaxDist = 100.5
 
 class HelloGeoRenderer(val activity: HelloGeoActivity) :
   SampleRender.Renderer, DefaultLifecycleObserver {
@@ -156,6 +157,23 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
       }
     }
   }
+
+  override fun onStart(owner: LifecycleOwner) {
+    super.onStart(owner)
+
+  }
+
+  fun ClearAll(){
+    AncList = mutableListOf<Anchor>()
+    PosDataList = mutableListOf<PosData>()
+
+    val json = gson.toJson(PosDataList.toList())
+    val editor = sharedpreferences.edit()
+
+    editor.putString(list, json)
+    editor.apply()
+  }
+
   override fun onDrawFrame(render: SampleRender) {
     val session = session ?: return
 
@@ -232,7 +250,15 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
         longitude = cameraGeospatialPose.longitude,
         heading = cameraGeospatialPose.heading
       )
+      activity.view.button5_clicker.setOnClickListener{
+        onMapClick(LatLng(earth.cameraGeospatialPose.latitude, earth.cameraGeospatialPose.longitude))
+      }
     }
+
+    activity.view.button4_clicker.setOnClickListener{
+      ClearAll()
+    }
+
 
     for (elem in AncList){
       earthAnchor = elem

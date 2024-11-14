@@ -17,6 +17,7 @@ package com.google.ar.core.codelabs.hellogeospatial.helpers
 
 import android.opengl.GLSurfaceView
 import android.view.View
+import android.widget.Button
 import android.widget.TextView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -33,6 +34,8 @@ class HelloGeoView(val activity: HelloGeoActivity) : DefaultLifecycleObserver {
   val root = View.inflate(activity, R.layout.activity_main, null)
   val surfaceView = root.findViewById<GLSurfaceView>(R.id.surfaceview)
 
+  val button4_clicker = root.findViewById<Button>(R.id.button4)
+  val button5_clicker = root.findViewById<Button>(R.id.button5)
   val session
     get() = activity.arCoreSessionHelper.session
 
@@ -50,7 +53,6 @@ class HelloGeoView(val activity: HelloGeoActivity) : DefaultLifecycleObserver {
     (activity.supportFragmentManager.findFragmentById(R.id.map)!! as SupportMapFragment).also {
       it.getMapAsync { googleMap -> mapView = MapView(activity, googleMap) }
     }
-
   val statusText = root.findViewById<TextView>(R.id.statusText)
   fun updateStatusText(earth: Earth, cameraGeospatialPose: GeospatialPose?) {
     activity.runOnUiThread {

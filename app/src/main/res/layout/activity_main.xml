@@ -48,4 +48,28 @@
         />
   </com.google.ar.core.codelabs.hellogeospatial.helpers.MapTouchWrapper>
 
+  <Button
+      android:id="@+id/button4"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignParentStart="true"
+      android:layout_alignParentTop="true"
+      android:layout_alignParentEnd="true"
+      android:layout_marginStart="0dp"
+      android:layout_marginTop="0dp"
+      android:layout_marginEnd="323dp"
+      android:text="Clear" />
+
+  <Button
+      android:id="@+id/button5"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignParentStart="true"
+      android:layout_alignParentTop="true"
+      android:layout_alignParentEnd="true"
+      android:layout_marginStart="320dp"
+      android:layout_marginTop="0dp"
+      android:layout_marginEnd="0dp"
+      android:text="AtMe" />
+
 </RelativeLayout>
