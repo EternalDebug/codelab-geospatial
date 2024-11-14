@@ -15,6 +15,7 @@
  */
 package com.google.ar.core.codelabs.hellogeospatial
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -31,6 +32,10 @@ import com.google.ar.core.exceptions.UnavailableApkTooOldException
 import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
+import com.google.gson.reflect.TypeToken
+import java.lang.reflect.Type
+
+lateinit var PosDataList: MutableList<PosData>
 
 class HelloGeoActivity : AppCompatActivity() {
   companion object {
@@ -43,6 +48,25 @@ class HelloGeoActivity : AppCompatActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    // getting the data which is stored in shared preferences.
+    sharedpreferences = getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE)
+
+    val json = sharedpreferences.getString(list, null)
+    if (json != null){
+      // below line is to get the type of our array list.
+      val type: Type = object : TypeToken<ArrayList<PosData?>?>() {}.type
+
+      var datalist = gson.fromJson<Any>(json, type) as ArrayList<PosData>
+      // checking below if the array list is empty or not
+      if (datalist == null) {
+        // if the array list is empty
+        // creating a new array list.
+        datalist = ArrayList()
+      }
+      PosDataList = datalist
+    }
+    else
+      PosDataList = mutableListOf<PosData>()
 
     // Setup ARCore session lifecycle helper and configuration.
     arCoreSessionHelper = ARCoreSessionLifecycleHelper(this)

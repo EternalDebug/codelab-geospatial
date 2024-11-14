@@ -15,6 +15,8 @@
  */
 package com.google.ar.core.codelabs.hellogeospatial
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.opengl.Matrix
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -31,8 +33,22 @@ import com.google.ar.core.examples.java.common.samplerender.Shader
 import com.google.ar.core.examples.java.common.samplerender.Texture
 import com.google.ar.core.examples.java.common.samplerender.arcore.BackgroundRenderer
 import com.google.ar.core.exceptions.CameraNotAvailableException
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import java.io.IOException
+import java.lang.reflect.Type
 
+const val SHARED_PREFS = "shared_prefs"
+const val list = "shared_list"
+data class PosData(var lat:Double, var long:Double, var alt:Double)
+
+//var PosDataList = mutableListOf<PosData>()
+
+// shared preferences.
+lateinit var sharedpreferences: SharedPreferences
+
+// creating a variable for gson.
+val gson = Gson()
 
 class HelloGeoRenderer(val activity: HelloGeoActivity) :
   SampleRender.Renderer, DefaultLifecycleObserver {
@@ -187,11 +203,20 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
       )
     }
 
-    // Draw the placed anchor, if it exists.
-    earthAnchor?.let {
-      render.renderCompassAtAnchor(it)
-    }
+    val qx = 0f
+    val qy = 0f
+    val qz = 0f
+    val qw = 1f
 
+    for (elem in PosDataList){
+      if (earth?.trackingState == TrackingState.TRACKING) {
+        earthAnchor = earth.createAnchor(elem.lat, elem.long, elem.alt, qx, qy, qz, qw)
+      }
+      // Draw the placed anchor, if it exists.
+      earthAnchor?.let {
+        render.renderCompassAtAnchor(it)
+      }
+    }
     // Compose the virtual scene with the background.
     backgroundRenderer.drawVirtualScene(render, virtualSceneFramebuffer, Z_NEAR, Z_FAR)
   }
@@ -204,7 +229,8 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     if (earth.trackingState != TrackingState.TRACKING) {
       return
     }
-    earthAnchor?.detach()
+
+    //earthAnchor?.detach()
     // Place the earth anchor at the same altitude as that of the camera to make it easier to view.
     val altitude = earth.cameraGeospatialPose.altitude - 1
 // The rotation quaternion of the anchor in the East-Up-South (EUS) coordinate system.
@@ -212,13 +238,38 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     val qy = 0f
     val qz = 0f
     val qw = 1f
+
+    val newAnchor = PosData(latLng.latitude, latLng.longitude, altitude)
+    val (flag, el) = CheckIsVeryNear(latLng)
+    if (flag){
+      PosDataList.remove(el)
+      return
+    }
+
+    PosDataList.add(newAnchor)
+    val json = gson.toJson(PosDataList.toList())
+    val editor = sharedpreferences.edit()
+
+    editor.putString(list, json)
+    editor.apply()
+
     earthAnchor =
       earth.createAnchor(latLng.latitude, latLng.longitude, altitude, qx, qy, qz, qw)
 
     activity.view.mapView?.earthMarker?.apply {
       position = latLng
       isVisible = true
+
     }
+  }
+
+  private fun CheckIsVeryNear(latLng: LatLng, veryNear:Double = 0.000007): Pair<Boolean, PosData> {
+    val res = Pair(false, PosData(0.0,0.0,0.0))
+    for (elem in PosDataList){
+      if (Math.abs(elem.lat - latLng.latitude) < veryNear && Math.abs(elem.long - latLng.longitude) < veryNear)
+        return Pair(true, elem)
+    }
+    return res
   }
 
   private fun SampleRender.renderCompassAtAnchor(anchor: Anchor) {
