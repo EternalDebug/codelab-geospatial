@@ -41,7 +41,8 @@ class MapView(val activity: HelloGeoActivity, val googleMap: GoogleMap) {
   val cameraMarker = createMarker(CAMERA_MARKER_COLOR)
   var cameraIdle = true
 
-  val earthMarker = createMarker(EARTH_MARKER_COLOR)
+  //val earthMarker = createMarker(EARTH_MARKER_COLOR)
+  var earthMarkers: MutableList<Marker> = mutableListOf()
 
   init {
     googleMap.uiSettings.apply {
@@ -57,6 +58,29 @@ class MapView(val activity: HelloGeoActivity, val googleMap: GoogleMap) {
     // Add listeners to keep track of when the GoogleMap camera is moving.
     googleMap.setOnCameraMoveListener { cameraIdle = false }
     googleMap.setOnCameraIdleListener { cameraIdle = true }
+  }
+
+  fun addMarker(color: Int){
+    val mark = createMarker(color)
+    earthMarkers.add(mark)
+  }
+
+  fun clearMarkers(){
+    for (elem in earthMarkers){
+      elem.remove()
+    }
+    earthMarkers = mutableListOf()
+
+  }
+
+  fun removeMarker(latLng: LatLng){
+    for (elem in earthMarkers){
+      if (elem.position == latLng){
+        elem.remove()
+        earthMarkers.remove(elem)
+        break
+      }
+    }
   }
 
   fun updateMapPosition(latitude: Double, longitude: Double, heading: Double) {

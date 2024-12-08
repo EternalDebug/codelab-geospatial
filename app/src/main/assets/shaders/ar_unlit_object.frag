@@ -17,6 +17,7 @@
 precision mediump float;
 
 uniform sampler2D u_Texture;
+uniform int action;
 
 in vec2 v_TexCoord;
 
@@ -26,6 +27,17 @@ void main() {
     // Mirror texture coordinates over the X axis
     vec2 texCoord = vec2(v_TexCoord.x, 1.0 - v_TexCoord.y);
 
-    o_FragColor = vec4(texture(u_Texture, texCoord).rgb, 1.0);
+    vec3 texCol = texture(u_Texture, texCoord).rgb;
+
+    if(action == 1){
+            vec3 greenColor = vec3(0.0, 1.0, 0.0);
+            float alpha = 0.5; // Прозрачность
+            vec3 mixedColor = mix(texCol, greenColor, alpha);
+            o_FragColor = vec4(mixedColor, 1.0);
+        }
+        else{
+            // Установка цвета выхода
+            o_FragColor = vec4(texCol, 1.0);
+        }
     return;
 }

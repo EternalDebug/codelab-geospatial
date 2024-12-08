@@ -18,6 +18,7 @@ package com.google.ar.core.codelabs.hellogeospatial
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.ar.core.Config
@@ -103,6 +104,9 @@ class HelloGeoActivity : AppCompatActivity() {
 
     // Sets up an example renderer using our HelloGeoRenderer.
     SampleRender(view.surfaceView, renderer, assets)
+    view.buttonAct.visibility = View.INVISIBLE
+    view.statusvw.visibility = View.INVISIBLE
+    view.buttonToAR.visibility = View.INVISIBLE
   }
 
   // Configure the session, setting the desired options according to your usecase.

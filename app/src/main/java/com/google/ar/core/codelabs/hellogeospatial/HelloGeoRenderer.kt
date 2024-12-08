@@ -17,6 +17,7 @@ package com.google.ar.core.codelabs.hellogeospatial
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.opengl.Matrix
 import android.util.Log
 import android.view.View
@@ -57,7 +58,7 @@ lateinit var sharedpreferences: SharedPreferences
 // creating a variable for gson.
 val gson = Gson()
 var ancInited = false
-var MaxDist = 100.5
+var MaxDist = 80.5
 
 class HelloGeoRenderer(val activity: HelloGeoActivity) :
   SampleRender.Renderer, DefaultLifecycleObserver {
@@ -139,6 +140,7 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     virtualSceneFramebuffer.resize(width, height)
   }
   //</editor-fold>
+
   fun initAnc(earth: Earth?){
     val qx = 0f
     val qy = 0f
@@ -156,6 +158,20 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
         }
       }
     }
+
+    drawOnMap()
+  }
+
+  fun drawOnMap(){
+    activity.runOnUiThread {
+      for (pos in PosDataList){
+      activity.view.mapView?.addMarker(Color.argb(255, 150,150,150))
+      activity.view.mapView?.earthMarkers?.last()?.apply {
+        position = LatLng(pos.lat, pos.long)
+        isVisible = true
+      }
+    }}
+
   }
 
   override fun onStart(owner: LifecycleOwner) {
@@ -166,6 +182,7 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
   fun ClearAll(){
     AncList = mutableListOf<Anchor>()
     PosDataList = mutableListOf<PosData>()
+    activity.view.mapView?.clearMarkers()
 
     val json = gson.toJson(PosDataList.toList())
     val editor = sharedpreferences.edit()
@@ -250,6 +267,9 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
         longitude = cameraGeospatialPose.longitude,
         heading = cameraGeospatialPose.heading
       )
+
+      activity.view.updateStatusText(earth, earth.cameraGeospatialPose)
+
       activity.view.button5_clicker.setOnClickListener{
         onMapClick(LatLng(earth.cameraGeospatialPose.latitude, earth.cameraGeospatialPose.longitude))
       }
@@ -292,6 +312,12 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     val (flag, el) = CheckIsVeryNear(latLng)
     if (flag){
       PosDataList.remove(el)
+      activity.view.mapView?.removeMarker(LatLng(el.lat, el.long))
+      if (PosDataList.size == 0){
+        ClearAll()
+      }
+      AncList = mutableListOf()
+      initAnc(earth)
       return
     }
 
@@ -312,20 +338,37 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
         AncList.add(it)}
     }
 
-    activity.view.mapView?.earthMarker?.apply {
+
+    activity.view.mapView?.addMarker(Color.argb(255, 150,150,150))
+    activity.view.mapView?.earthMarkers?.last()?.apply {
       position = latLng
       isVisible = true
-
     }
+
   }
 
-  private fun CheckIsVeryNear(latLng: LatLng, veryNear:Double = 0.000007): Pair<Boolean, PosData> {
+  private fun CheckIsVeryNear(latLng: LatLng, veryNear:Double = 8.0): Pair<Boolean, PosData> {
     val res = Pair(false, PosData(0.0,0.0,0.0))
     for (elem in PosDataList){
-      if (Math.abs(elem.lat - latLng.latitude) < veryNear && Math.abs(elem.long - latLng.longitude) < veryNear)
+      //if (Math.abs(elem.lat - latLng.latitude) < veryNear && Math.abs(elem.long - latLng.longitude) < veryNear)
+      //  return Pair(true, elem)
+      if (distance2markers(LatLng(elem.lat, elem.long), latLng) < veryNear)
         return Pair(true, elem)
     }
     return res
+  }
+
+  fun distance2markers(latlng: LatLng, latlng2: LatLng): Double{
+    val lat2 = latlng2.latitude
+    val lon2 = latlng2.longitude
+    val R = 6371000 // радиус Земли в метрах
+    val dLat = Math.toRadians(lat2 - latlng.latitude)
+    val dLon = Math.toRadians(lon2 - latlng.longitude)
+    val a = sin(dLat / 2) * sin(dLat / 2) +
+            cos(Math.toRadians(latlng.latitude)) * cos(Math.toRadians(lat2)) *
+            sin(dLon / 2) * sin(dLon / 2)
+    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return R * c // расстояние в метрах
   }
 
   fun distance(latlng: LatLng, earth: Earth): Double {
@@ -341,7 +384,7 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     return R * c // расстояние в метрах
   }
 
-  private fun SampleRender.renderCompassAtAnchor(anchor: Anchor) {
+  private fun SampleRender.renderCompassAtAnchor(anchor: Anchor, action: Int = 0) {
     // Get the current pose of the Anchor in world space. The Anchor pose is updated
     // during calls to session.update() as ARCore refines its estimate of the world.
     anchor.pose.toMatrix(modelMatrix, 0)
@@ -352,6 +395,9 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
 
     // Update shader properties and draw
     virtualObjectShader.setMat4("u_ModelViewProjection", modelViewProjectionMatrix)
+
+    virtualObjectShader.setInt("action", action)
+
     draw(virtualObjectMesh, virtualObjectShader, virtualSceneFramebuffer)
   }
 

@@ -36,6 +36,10 @@ class HelloGeoView(val activity: HelloGeoActivity) : DefaultLifecycleObserver {
 
   val button4_clicker = root.findViewById<Button>(R.id.button4)
   val button5_clicker = root.findViewById<Button>(R.id.button5)
+    val statusvw = root.findViewById<TextView>(R.id.statusText)
+    val buttonAct = root.findViewById<Button>(R.id.buttonDo)
+    val buttonMenu = root.findViewById<Button>(R.id.buttonmenu)
+    val buttonToAR = root.findViewById<Button>(R.id.buttonToAR)
   val session
     get() = activity.arCoreSessionHelper.session
 
@@ -79,4 +83,8 @@ class HelloGeoView(val activity: HelloGeoActivity) : DefaultLifecycleObserver {
   override fun onPause(owner: LifecycleOwner) {
     surfaceView.onPause()
   }
+
+    fun setStatus(string: String){
+        statusvw.text = string
+    }
 }

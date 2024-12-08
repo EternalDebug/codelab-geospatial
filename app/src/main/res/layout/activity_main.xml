@@ -72,4 +72,50 @@
       android:layout_marginEnd="0dp"
       android:text="AtMe" />
 
+  <Button
+      android:id="@+id/buttonDo"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_above="@+id/map_wrapper"
+      android:layout_alignParentEnd="true"
+      android:layout_marginEnd="3dp"
+      android:layout_marginBottom="3dp"
+      android:text="Do" />
+
+  <Button
+      android:id="@+id/buttonmenu"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_above="@+id/map_wrapper"
+      android:layout_alignParentStart="true"
+      android:layout_marginStart="3dp"
+      android:layout_marginBottom="3dp"
+      android:text="To Menu"
+      android:visibility="invisible" />
+
+  <TextView
+      android:id="@+id/statustext"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignParentStart="true"
+      android:layout_alignParentTop="true"
+      android:layout_alignParentEnd="true"
+      android:layout_alignParentBottom="true"
+      android:layout_marginStart="0dp"
+      android:layout_marginTop="0dp"
+      android:layout_marginEnd="0dp"
+      android:layout_marginBottom="0dp"
+      android:text="TextView" />
+
+  <Button
+      android:id="@+id/buttonToAR"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignParentTop="true"
+      android:layout_alignParentEnd="true"
+      android:layout_marginTop="150dp"
+      android:layout_marginEnd="160dp"
+      android:text="To AR"
+      android:visibility="invisible" />
+
 </RelativeLayout>
