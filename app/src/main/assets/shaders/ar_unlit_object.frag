@@ -34,10 +34,17 @@ void main() {
             float alpha = 0.5; // Прозрачность
             vec3 mixedColor = mix(texCol, greenColor, alpha);
             o_FragColor = vec4(mixedColor, 1.0);
-        }
-        else{
+    }
+    if(action ==2){
+            vec3 blueColor = vec3(0.0, 0.0, 1.0);
+            float alpha = 0.5; // Прозрачность
+            vec3 mixedColor = mix(texCol, blueColor, alpha);
+            o_FragColor = vec4(mixedColor, 1.0);
+    }
+    if (action ==0){
             // Установка цвета выхода
             o_FragColor = vec4(texCol, 1.0);
-        }
+    }
+
     return;
 }

@@ -18,9 +18,11 @@ package com.google.ar.core.codelabs.hellogeospatial
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.ar.core.Config
 import com.google.ar.core.Session
 import com.google.ar.core.codelabs.hellogeospatial.helpers.ARCoreSessionLifecycleHelper
@@ -34,6 +36,7 @@ import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.launch
 import java.lang.reflect.Type
 
 lateinit var PosDataList: MutableList<PosData>
@@ -109,8 +112,27 @@ class HelloGeoActivity : AppCompatActivity() {
     view.buttonAct.visibility = View.INVISIBLE
     view.statusvw.visibility = View.INVISIBLE
     view.buttonToAR.visibility = View.VISIBLE
+    view.ScrStatus.visibility = View.VISIBLE
+    view.ScrStatus.gravity = Gravity.CENTER
 
     view.buttonToAR.setOnClickListener { ModelFlag = !ModelFlag }
+    view.buttonAct.setOnClickListener {
+      if (act == 1)
+      {
+        act = 2
+      }
+      else{
+        act = 1
+      }
+    }
+
+
+    view.ScrStatus.text = "Инициализация данных"
+    view.ScrStatus.visibility = View.VISIBLE
+    lifecycleScope.launch{
+      kotlinx.coroutines.delay(5000)
+
+    }
 
     //view.surfaceView.visibility = View.INVISIBLE
   }

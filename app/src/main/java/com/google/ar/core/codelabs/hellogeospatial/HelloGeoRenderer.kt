@@ -67,6 +67,7 @@ var MaxDist = 80.5
 var needArrow = true
 lateinit var  nearestAnc: Anchor
 var smallestDist = Double.MAX_VALUE
+var act = 1
 
 class HelloGeoRenderer(val activity: HelloGeoActivity) :
   SampleRender.Renderer, DefaultLifecycleObserver {
@@ -175,13 +176,7 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
   //</editor-fold>
 
   fun initAnc(earth: Earth?){
-    activity.runOnUiThread {
-      activity.view.ScrStatus.text = "       Инициализация данных      "
-      activity.view.ScrStatus.visibility = View.VISIBLE
-      activity.lifecycleScope.launch{
-        kotlinx.coroutines.delay(5000)
-      }
-    }
+
     val qx = 0f
     val qy = 0f
     val qz = 0f
@@ -209,7 +204,7 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
 
     drawOnMap()
     activity.runOnUiThread {
-      activity.view.ScrStatus.text = "      Инициализация данных завершена     "
+      activity.view.ScrStatus.text = "      Инициализация данных...     "
 
 
       activity.lifecycleScope.launch{
@@ -337,6 +332,7 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     val earth = session.earth
 
     if (!ancInited){
+
       initAnc(earth)
       ancInited = true
     }
@@ -372,13 +368,19 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
       earthAnchor?.let{
         if (it == nearestAnc)
         {
-          if (isAnchorVisible(it, earth)){
-            activity.runOnUiThread{activity.view.txt.visibility = View.VISIBLE}
+          if (!isAnchorVisible(it, earth)){
+            activity.runOnUiThread{
+              activity.view.txt.visibility = View.VISIBLE
+              activity.view.buttonAct.visibility = View.INVISIBLE
+            }
           }
           else{
-            activity.runOnUiThread{activity.view.txt.visibility = View.INVISIBLE}
+            activity.runOnUiThread{
+              activity.view.txt.visibility = View.INVISIBLE
+              activity.view.buttonAct.visibility = View.VISIBLE
+            }
           }
-          render.renderCompassAtAnchor(it, 1)
+          render.renderCompassAtAnchor(it, act)
         }
         else
           render.renderCompassAtAnchor(it)
@@ -556,7 +558,7 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     val cameraPose = earth?.cameraGeospatialPose ?: return false
     // Получаем направление heading камеры (угол в градусах)
     val cameraHeading = cameraPose.heading // Угол ориентации камеры
-    return abs((headingDegrees + 360) % 360 - cameraHeading) <= 75
+    return abs((headingDegrees + 360 - 120) % 360 - cameraHeading) <= 60
   }
 
   private fun showError(errorMessage: String) =
