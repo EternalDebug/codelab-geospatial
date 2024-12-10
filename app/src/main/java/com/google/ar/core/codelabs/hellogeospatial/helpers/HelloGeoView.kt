@@ -18,6 +18,7 @@ package com.google.ar.core.codelabs.hellogeospatial.helpers
 import android.opengl.GLSurfaceView
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -40,6 +41,9 @@ class HelloGeoView(val activity: HelloGeoActivity) : DefaultLifecycleObserver {
     val buttonAct = root.findViewById<Button>(R.id.buttonDo)
     val buttonMenu = root.findViewById<Button>(R.id.buttonmenu)
     val buttonToAR = root.findViewById<Button>(R.id.buttonToAR)
+    val txt = root.findViewById<TextView>(R.id.textView)
+    val ScrStatus = root.findViewById<TextView>(R.id.statustext)
+
   val session
     get() = activity.arCoreSessionHelper.session
 
@@ -87,4 +91,5 @@ class HelloGeoView(val activity: HelloGeoActivity) : DefaultLifecycleObserver {
     fun setStatus(string: String){
         statusvw.text = string
     }
+
 }

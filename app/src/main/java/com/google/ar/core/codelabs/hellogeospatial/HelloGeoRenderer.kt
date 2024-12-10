@@ -37,14 +37,19 @@ import com.google.ar.core.examples.java.common.samplerender.Shader
 import com.google.ar.core.examples.java.common.samplerender.Texture
 import com.google.ar.core.examples.java.common.samplerender.arcore.BackgroundRenderer
 import com.google.ar.core.exceptions.CameraNotAvailableException
+import com.google.ar.sceneform.math.Vector3
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.IOException
 import java.lang.reflect.Type
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 const val SHARED_PREFS = "shared_prefs"
 const val list = "shared_list"
@@ -59,6 +64,9 @@ lateinit var sharedpreferences: SharedPreferences
 val gson = Gson()
 var ancInited = false
 var MaxDist = 80.5
+var needArrow = true
+lateinit var  nearestAnc: Anchor
+var smallestDist = Double.MAX_VALUE
 
 class HelloGeoRenderer(val activity: HelloGeoActivity) :
   SampleRender.Renderer, DefaultLifecycleObserver {
@@ -78,6 +86,10 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
   lateinit var virtualObjectMesh: Mesh
   lateinit var virtualObjectShader: Shader
   lateinit var virtualObjectTexture: Texture
+
+  lateinit var virtualObjectMesh2: Mesh
+  lateinit var virtualObjectTexture2: Texture
+  lateinit var virtualObjectShader2: Shader
 
   // Temporary matrix allocated here to reduce number of allocations for each frame.
   val modelMatrix = FloatArray(16)
@@ -113,12 +125,25 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
       virtualObjectTexture =
         Texture.createFromAsset(
           render,
+          //"models/spatial_marker_baked.png",
+          "models/tank.png",
+          Texture.WrapMode.CLAMP_TO_EDGE,
+          Texture.ColorFormat.SRGB
+        )
+
+      virtualObjectTexture2 =
+        Texture.createFromAsset(
+          render,
+          //"models/spatial_marker_baked.png",
           "models/spatial_marker_baked.png",
           Texture.WrapMode.CLAMP_TO_EDGE,
           Texture.ColorFormat.SRGB
         )
 
-      virtualObjectMesh = Mesh.createFromAsset(render, "models/geospatial_marker.obj");
+      virtualObjectMesh = Mesh.createFromAsset(render, "models/tank.obj");
+
+      virtualObjectMesh2 = Mesh.createFromAsset(render, "models/geospatial_marker.obj");
+
       virtualObjectShader =
         Shader.createFromAssets(
           render,
@@ -126,6 +151,14 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
           "shaders/ar_unlit_object.frag",
           /*defines=*/ null)
           .setTexture("u_Texture", virtualObjectTexture)
+
+      virtualObjectShader2 =
+        Shader.createFromAssets(
+          render,
+          "shaders/ar_unlit_object.vert",
+          "shaders/ar_unlit_object.frag",
+          /*defines=*/ null)
+          .setTexture("u_Texture", virtualObjectTexture2)
 
       backgroundRenderer.setUseDepthVisualization(render, false)
       backgroundRenderer.setUseOcclusion(render, false)
@@ -142,24 +175,49 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
   //</editor-fold>
 
   fun initAnc(earth: Earth?){
+    activity.runOnUiThread {
+      activity.view.ScrStatus.text = "       Инициализация данных      "
+      activity.view.ScrStatus.visibility = View.VISIBLE
+      activity.lifecycleScope.launch{
+        kotlinx.coroutines.delay(5000)
+      }
+    }
     val qx = 0f
     val qy = 0f
     val qz = 0f
     val qw = 1f
+
     AncList = mutableListOf<Anchor>()
 
     for (elem in PosDataList){
-
       if (earth?.trackingState == TrackingState.TRACKING) {
         if (distance(LatLng(elem.lat, elem.long), earth) <= MaxDist){
           earthAnchor = earth.createAnchor(elem.lat, elem.long, elem.alt, qx, qy, qz, qw)
+          var dst = distance(LatLng(elem.lat, elem.long), earth)
           earthAnchor?.let {
             AncList.add(it)}
+          if (dst < smallestDist){
+            smallestDist = dst
+            AncList.last().let {
+              nearestAnc = it
+            }
+            //nearestAnc = AncList.last()
+          }
         }
       }
     }
 
     drawOnMap()
+    activity.runOnUiThread {
+      activity.view.ScrStatus.text = "      Инициализация данных завершена     "
+
+
+      activity.lifecycleScope.launch{
+        kotlinx.coroutines.delay(3000)
+        activity.view.ScrStatus.visibility = View.INVISIBLE
+        activity.view.surfaceView.visibility = View.VISIBLE
+      }
+    }
   }
 
   fun drawOnMap(){
@@ -189,6 +247,30 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
 
     editor.putString(list, json)
     editor.apply()
+
+    smallestDist = Double.MAX_VALUE
+  }
+
+  fun GetNearestAnc(earth: Earth?): Double{
+    var res = Double.MAX_VALUE
+    AncList.let {
+      for (anc in it){
+        if (earth != null)
+        {
+          val ind = AncList.indexOf(anc)
+          val dst = distance(LatLng(PosDataList[ind].lat, PosDataList[ind].long), earth)
+          if (res > dst){
+            res = dst
+            //anc.let {
+            //  nearestAnc = it
+            //}
+            nearestAnc = anc
+          }
+        }
+      }
+    }
+
+    return res
   }
 
   override fun onDrawFrame(render: SampleRender) {
@@ -270,6 +352,7 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
 
       activity.view.updateStatusText(earth, earth.cameraGeospatialPose)
 
+
       activity.view.button5_clicker.setOnClickListener{
         onMapClick(LatLng(earth.cameraGeospatialPose.latitude, earth.cameraGeospatialPose.longitude))
       }
@@ -278,14 +361,51 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     activity.view.button4_clicker.setOnClickListener{
       ClearAll()
     }
-
+    AncList.let {
+      if (it.size > 0){
+        smallestDist = GetNearestAnc(earth)
+      }
+    }
 
     for (elem in AncList){
       earthAnchor = elem
       earthAnchor?.let{
-        render.renderCompassAtAnchor(it)
+        if (it == nearestAnc)
+        {
+          if (isAnchorVisible(it, earth)){
+            activity.runOnUiThread{activity.view.txt.visibility = View.VISIBLE}
+          }
+          else{
+            activity.runOnUiThread{activity.view.txt.visibility = View.INVISIBLE}
+          }
+          render.renderCompassAtAnchor(it, 1)
+        }
+        else
+          render.renderCompassAtAnchor(it)
       }
     }
+
+    if (PosDataList.size == 0){
+      activity.runOnUiThread{activity.view.txt.visibility = View.INVISIBLE}
+    }
+
+    //if (needArrow && AncList.size > 0){
+    //  activity.runOnUiThread{
+    //    nearestAnc.let {
+          ////val ts = it.trackingState
+
+    //      if (isAnchorVisible(nearestAnc, earth)){
+    //        activity.view.txt.visibility = View.VISIBLE
+            ////Log.e("NoTrack",ts.toString())
+    //      } else{
+    //        activity.view.txt.visibility = View.INVISIBLE
+            ////Log.e("Track",ts.toString())
+    //      }
+    //    }
+
+    //  }
+    //}
+
     // Compose the virtual scene with the background.
     backgroundRenderer.drawVirtualScene(render, virtualSceneFramebuffer, Z_NEAR, Z_FAR)
   }
@@ -332,11 +452,19 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
       earth.createAnchor(latLng.latitude, latLng.longitude, altitude, qx, qy, qz, qw)
 
     //initAnc(earth)
-
-    if (distance(latLng, earth) <= MaxDist){
+    var dst = distance(latLng,earth)
+    if (dst <= MaxDist){
       earthAnchor?.let {
         AncList.add(it)}
+      if (dst < smallestDist){
+        smallestDist = dst
+        AncList.last().let {
+          nearestAnc = it
+        }
+        //nearestAnc = AncList.last()
+      }
     }
+
 
 
     activity.view.mapView?.addMarker(Color.argb(255, 150,150,150))
@@ -398,7 +526,37 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
 
     virtualObjectShader.setInt("action", action)
 
-    draw(virtualObjectMesh, virtualObjectShader, virtualSceneFramebuffer)
+    // Update shader properties and draw
+    virtualObjectShader2.setMat4("u_ModelViewProjection", modelViewProjectionMatrix)
+
+    virtualObjectShader2.setInt("action", action)
+
+    if (ModelFlag)
+    {
+      draw(virtualObjectMesh, virtualObjectShader, virtualSceneFramebuffer)
+    }
+    else{
+      draw(virtualObjectMesh2, virtualObjectShader2, virtualSceneFramebuffer)
+    }
+
+  }
+
+  private fun isAnchorVisible(anchor: Anchor, earth: Earth?): Boolean {
+    // Получаем позу якоря
+    val anchorPose = anchor.pose
+    // Получаем кватернион якоря
+    val anchorQuaternion = anchorPose.rotationQuaternion // [x, y, z, w]
+    // Извлекаем компоненты кватерниона
+    val (x, y, z, w) = anchorQuaternion
+    // Вычисляем матрицу вращения из кватерниона
+    val heading = atan2(2.0 * (y * w + x * z), (w * w + x * x - y * y - z * z).toDouble())
+    // Переводим радианы в градусы
+    val headingDegrees = Math.toDegrees(heading)
+    // Получаем позу камеры
+    val cameraPose = earth?.cameraGeospatialPose ?: return false
+    // Получаем направление heading камеры (угол в градусах)
+    val cameraHeading = cameraPose.heading // Угол ориентации камеры
+    return abs((headingDegrees + 360) % 360 - cameraHeading) <= 75
   }
 
   private fun showError(errorMessage: String) =

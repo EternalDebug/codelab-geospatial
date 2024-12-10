@@ -38,6 +38,8 @@ import java.lang.reflect.Type
 
 lateinit var PosDataList: MutableList<PosData>
 
+var ModelFlag = true
+
 class HelloGeoActivity : AppCompatActivity() {
   companion object {
     private const val TAG = "HelloGeoActivity"
@@ -106,7 +108,11 @@ class HelloGeoActivity : AppCompatActivity() {
     SampleRender(view.surfaceView, renderer, assets)
     view.buttonAct.visibility = View.INVISIBLE
     view.statusvw.visibility = View.INVISIBLE
-    view.buttonToAR.visibility = View.INVISIBLE
+    view.buttonToAR.visibility = View.VISIBLE
+
+    view.buttonToAR.setOnClickListener { ModelFlag = !ModelFlag }
+
+    //view.surfaceView.visibility = View.INVISIBLE
   }
 
   // Configure the session, setting the desired options according to your usecase.
